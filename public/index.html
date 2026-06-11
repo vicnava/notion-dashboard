@@ -283,6 +283,8 @@ function buildDashboard(tasks) {
 
   let streak = 0;
   const chk = new Date(today);
+  // el día de hoy sigue en curso: si aún no hay actividad, cuenta desde ayer
+  if (!byDate[localISO(chk)]) chk.setDate(chk.getDate()-1);
   while (byDate[localISO(chk)]) { streak++; chk.setDate(chk.getDate()-1); }
 
   document.getElementById('m-total').textContent  = total;
