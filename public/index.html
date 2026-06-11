@@ -106,9 +106,12 @@
   .hm-cell.l3     { background: var(--green3); }
   .hm-cell.l4     { background: var(--green4); }
 
+  .hm-scroll { scrollbar-width: thin; scrollbar-color: transparent transparent; transition: scrollbar-color 0.2s; }
+  .hm-scroll:hover { scrollbar-color: var(--border2) transparent; }
   .hm-scroll::-webkit-scrollbar { height: 6px; }
-  .hm-scroll::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
   .hm-scroll::-webkit-scrollbar-track { background: transparent; }
+  .hm-scroll::-webkit-scrollbar-thumb { background: transparent; border-radius: 3px; transition: background 0.2s; }
+  .hm-scroll:hover::-webkit-scrollbar-thumb { background: var(--border2); }
 
   .hm-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 9px; font-size: 10px; color: var(--muted); }
   .legend { display: flex; align-items: center; gap: 3px; }
