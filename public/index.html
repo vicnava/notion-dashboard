@@ -272,7 +272,7 @@ function buildDashboard(tasks) {
 
   const total = Object.values(byDate).reduce((a,b) => a+b, 0);
   const td = localISO(today);
-  const weekStart = new Date(today); weekStart.setDate(today.getDate() - today.getDay());
+  const weekStart = new Date(today); weekStart.setDate(today.getDate() - ((today.getDay()+6)%7));
   const ws = localISO(weekStart);
   const ms = td.slice(0,7) + '-01';
   const weekCount  = Object.entries(byDate).filter(([d]) => d >= ws).reduce((a,[,v]) => a+v, 0);
@@ -303,7 +303,7 @@ function buildDashboard(tasks) {
 function buildHeatmap(byDate, today, yearAgo, months) {
   const cells = [];
   const cur = new Date(yearAgo);
-  cur.setDate(cur.getDate() - cur.getDay());
+  cur.setDate(cur.getDate() - ((cur.getDay()+6)%7));
   const ya = localISO(yearAgo);
   const td = localISO(today);
 
@@ -330,7 +330,7 @@ function buildHeatmap(byDate, today, yearAgo, months) {
 
   const dayLbls = document.createElement('div');
   dayLbls.className = 'hm-labels-days';
-  ['','lun','','mié','','vie',''].forEach(l => { const s = document.createElement('span'); s.textContent = l; dayLbls.appendChild(s); });
+  ['lun','','mié','','vie','',''].forEach(l => { const s = document.createElement('span'); s.textContent = l; dayLbls.appendChild(s); });
 
   const scroll = document.createElement('div');
   scroll.className = 'hm-scroll';
