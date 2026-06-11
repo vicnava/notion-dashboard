@@ -196,6 +196,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
 const DB_ID = '1adef8fc-ea18-802a-b582-c586f9c2f465';
+const localISO = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 
 async function fetchPage(cursor) {
   const body = { dbId: DB_ID };
@@ -259,7 +260,7 @@ function hideError() { document.getElementById('error-banner').style.display = '
 function buildDashboard(tasks) {
   const today = new Date();
   const yearAgo = new Date(today); yearAgo.setFullYear(today.getFullYear() - 1);
-  const ya = yearAgo.toISOString().split('T')[0];
+  const ya = localISO(yearAgo);
 
   const byDate = {}, byProject = {};
   tasks.forEach(t => {
@@ -269,16 +270,16 @@ function buildDashboard(tasks) {
   });
 
   const total = Object.values(byDate).reduce((a,b) => a+b, 0);
-  const td = today.toISOString().split('T')[0];
+  const td = localISO(today);
   const weekStart = new Date(today); weekStart.setDate(today.getDate() - today.getDay());
-  const ws = weekStart.toISOString().split('T')[0];
+  const ws = localISO(weekStart);
   const ms = td.slice(0,7) + '-01';
   const weekCount  = Object.entries(byDate).filter(([d]) => d >= ws).reduce((a,[,v]) => a+v, 0);
   const monthCount = Object.entries(byDate).filter(([d]) => d >= ms).reduce((a,[,v]) => a+v, 0);
 
   let streak = 0;
   const chk = new Date(today);
-  while (byDate[chk.toISOString().split('T')[0]]) { streak++; chk.setDate(chk.getDate()-1); }
+  while (byDate[localISO(chk)]) { streak++; chk.setDate(chk.getDate()-1); }
 
   document.getElementById('m-total').textContent  = total;
   document.getElementById('m-week').textContent   = weekCount;
@@ -302,11 +303,11 @@ function buildHeatmap(byDate, today, yearAgo, months) {
   const cells = [];
   const cur = new Date(yearAgo);
   cur.setDate(cur.getDate() - cur.getDay());
-  const ya = yearAgo.toISOString().split('T')[0];
-  const td = today.toISOString().split('T')[0];
+  const ya = localISO(yearAgo);
+  const td = localISO(today);
 
   while (cur <= today) {
-    const ds = cur.toISOString().split('T')[0];
+    const ds = localISO(cur);
     cells.push({ date: ds, count: (ds >= ya && ds <= td) ? (byDate[ds] || 0) : -1, month: cur.getMonth() });
     cur.setDate(cur.getDate() + 1);
   }
@@ -338,12 +339,12 @@ function buildHeatmap(byDate, today, yearAgo, months) {
   inner.style.cssText = 'display:flex;flex-direction:column';
 
   const mRow = document.createElement('div');
-  mRow.style.cssText = 'display:flex;margin-bottom:5px;min-width:max-content;height:14px;align-items:center;font-size:10px;color:var(--muted)';
-  let prevWi = 0;
+  mRow.style.cssText = `position:relative;margin-bottom:5px;height:14px;width:${weeks.length*14}px;font-size:10px;color:var(--muted)`;
   monthLabels.forEach(({wi, label}) => {
-    const sp = document.createElement('div'); sp.style.cssText = `width:${(wi-prevWi)*14}px;flex-shrink:0`; mRow.appendChild(sp);
-    const lb = document.createElement('span'); lb.style.cssText = 'flex-shrink:0'; lb.textContent = label; mRow.appendChild(lb);
-    prevWi = wi;
+    const lb = document.createElement('span');
+    lb.style.cssText = `position:absolute;left:${wi*14}px;white-space:nowrap`;
+    lb.textContent = label;
+    mRow.appendChild(lb);
   });
 
   const grid = document.createElement('div');
@@ -400,7 +401,7 @@ function buildCharts(byDate, today, months) {
   const mLabels = [], mData = [];
   for (let i = 11; i >= 0; i--) {
     const d = new Date(today); d.setMonth(d.getMonth()-i);
-    const ym = d.toISOString().split('T')[0].slice(0,7);
+    const ym = localISO(d).slice(0,7);
     mLabels.push(months[d.getMonth()]);
     mData.push(Object.entries(byDate).filter(([dt]) => dt.startsWith(ym)).reduce((a,[,v]) => a+v, 0));
   }
