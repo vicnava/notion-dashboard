@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard — Workspace VN</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0f0f0f;
+    --surface: #1a1a1a;
+    --surface2: #222222;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --text: #e8e8e8;
+    --muted: #6b6b6b;
+    --faint: #333333;
+    --accent: #4ade80;
+    --accent-dim: rgba(74,222,128,0.12);
+    --accent-glow: rgba(74,222,128,0.25);
+    --green0: #1a1a1a;
+    --green1: #1a3322;
+    --green2: #1e5c35;
+    --green3: #25a244;
+    --green4: #4ade80;
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'Inter', sans-serif;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 13px;
+    line-height: 1.5;
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  /* ── layout ── */
+  .shell {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+  }
+
+  /* ── header ── */
+  .topbar {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 2rem;
+    gap: 1rem;
+  }
+  .topbar-left h1 {
+    font-family: var(--mono);
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text);
+    letter-spacing: -0.02em;
+  }
+  .topbar-left .sub {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 3px;
+  }
+  .topbar-left .sub span {
+    color: var(--accent);
+  }
+  .btn-refresh {
+    background: var(--surface);
+    border: 0.5px solid var(--border2);
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-family: var(--sans);
+    color: var(--muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: color 0.15s, border-color 0.15s;
+    white-space: nowrap;
+  }
+  .btn-refresh:hover { color: var(--text); border-color: var(--border2); }
+  .btn-refresh svg { width: 13px; height: 13px; }
+  .btn-refresh.loading svg { animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── metrics row ── */
+  .metrics {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 1.5rem;
+  }
+  @media (max-width: 600px) { .metrics { grid-template-columns: repeat(2, 1fr); } }
+  .metric {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+  }
+  .metric .label {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 6px;
+  }
+  .metric .value {
+    font-family: var(--mono);
+    font-size: 26px;
+    font-weight: 500;
+    color: var(--text);
+    line-height: 1;
+  }
+  .metric .value.accent { color: var(--accent); }
+  .metric .sub {
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  /* ── heatmap ── */
+  .card {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: 10px;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1rem;
+  }
+  .card-title {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .card-title .count-badge {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--accent);
+    background: var(--accent-dim);
+    padding: 2px 8px;
+    border-radius: 4px;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  .heatmap-scroll { overflow-x: auto; padding-bottom: 4px; }
+  .heatmap-inner { display: flex; gap: 3px; min-width: max-content; }
+  .hm-col { display: flex; flex-direction: column; gap: 3px; }
+  .hm-cell {
+    width: 11px;
+    height: 11px;
+    border-radius: 2px;
+    cursor: default;
+    transition: opacity 0.1s;
+    position: relative;
+  }
+  .hm-cell:hover { opacity: 0.75; }
+  .hm-cell.empty { background: var(--faint); }
+  .hm-cell.l1 { background: var(--green1); }
+  .hm-cell.l2 { background: var(--green2); }
+  .hm-cell.l3 { background: var(--green3); }
+  .hm-cell.l4 { background: var(--green4); }
+  .hm-cell.out { background: transparent; }
+
+  .hm-labels-months {
+    display: flex;
+    gap: 3px;
+    margin-bottom: 5px;
+    padding-left: 0;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    min-width: max-content;
+  }
+  .hm-labels-days {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--muted);
+    margin-right: 6px;
+    flex-shrink: 0;
+  }
+  .hm-labels-days span { height: 11px; line-height: 11px; }
+
+  .hm-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 10px;
+    font-size: 10px;
+    color: var(--muted);
+  }
+  .legend {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+  }
+  .legend-cell {
+    width: 10px; height: 10px;
+    border-radius: 2px;
+  }
+
+  /* ── charts row ── */
+  .charts-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 1rem;
+  }
+  @media (max-width: 600px) { .charts-row { grid-template-columns: 1fr; } }
+
+  /* ── project bars ── */
+  .proj-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .proj-row:last-child { margin-bottom: 0; }
+  .proj-name {
+    font-size: 12px;
+    color: var(--text);
+    min-width: 130px;
+    max-width: 130px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .proj-track {
+    flex: 1;
+    height: 6px;
+    background: var(--faint);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .proj-fill {
+    height: 100%;
+    border-radius: 3px;
+    background: var(--green3);
+    transition: width 0.6s cubic-bezier(.16,1,.3,1);
+  }
+  .proj-count {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    min-width: 22px;
+    text-align: right;
+  }
+
+  /* ── state ── */
+  .state-msg {
+    text-align: center;
+    padding: 3rem;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  .state-msg .icon {
+    font-size: 24px;
+    margin-bottom: 0.75rem;
+    display: block;
+  }
+
+  /* ── tooltip ── */
+  #tooltip {
+    position: fixed;
+    background: var(--surface2);
+    border: 0.5px solid var(--border2);
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text);
+    pointer-events: none;
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity 0.1s;
+    white-space: nowrap;
+  }
+
+  /* ── error ── */
+  .error-banner {
+    background: rgba(239,68,68,0.08);
+    border: 0.5px solid rgba(239,68,68,0.2);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 12px;
+    color: #f87171;
+    margin-bottom: 1rem;
+    display: none;
+  }
+
+  /* ── config panel ── */
+  .config-wrap {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: 10px;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .config-wrap summary {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    user-select: none;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .config-wrap summary::before { content: '▶'; font-size: 8px; }
+  .config-wrap[open] summary::before { content: '▼'; }
+  .config-body { margin-top: 1rem; display: flex; flex-direction: column; gap: 10px; }
+  .config-row { display: flex; flex-direction: column; gap: 4px; }
+  .config-row label { font-size: 11px; color: var(--muted); }
+  .config-row input {
+    background: var(--surface2);
+    border: 0.5px solid var(--border2);
+    border-radius: 6px;
+    padding: 7px 10px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text);
+    width: 100%;
+    outline: none;
+  }
+  .config-row input:focus { border-color: var(--accent); }
+  .btn-save {
+    background: var(--accent-dim);
+    border: 0.5px solid var(--accent-glow);
+    border-radius: 6px;
+    padding: 7px 14px;
+    font-size: 12px;
+    font-family: var(--sans);
+    color: var(--accent);
+    cursor: pointer;
+    align-self: flex-start;
+    transition: background 0.15s;
+  }
+  .btn-save:hover { background: rgba(74,222,128,0.2); }
+</style>
+</head>
+<body>
+
+<div id="tooltip"></div>
+
+<div class="shell">
+
+  <!-- header -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <h1>victor navarrete / actividad</h1>
+      <div class="sub" id="date-range">cargando datos...</div>
+    </div>
+    <button class="btn-refresh" id="btn-refresh" onclick="loadData()">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M13.5 8A5.5 5.5 0 1 1 8 2.5c1.8 0 3.4.87 4.4 2.2" stroke-linecap="round"/>
+        <polyline points="10,2 12.5,4.7 10,7" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      actualizar
+    </button>
+  </div>
+
+  <!-- config -->
+  <details class="config-wrap" id="config-panel">
+    <summary>configuración de notion</summary>
+    <div class="config-body">
+      <div class="config-row">
+        <label>Notion Integration Token (secret_...)</label>
+        <input type="password" id="inp-token" placeholder="secret_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" />
+      </div>
+      <div class="config-row">
+        <label>ID de la base de datos de tareas</label>
+        <input type="text" id="inp-dbid" placeholder="1adef8fc-ea18-802a-b582-c586f9c2f465" />
+      </div>
+      <button class="btn-save" onclick="saveConfig()">guardar y cargar</button>
+    </div>
+  </details>
+
+  <div class="error-banner" id="error-banner"></div>
+
+  <!-- metrics -->
+  <div class="metrics">
+    <div class="metric">
+      <div class="label">total completadas</div>
+      <div class="value" id="m-total">—</div>
+      <div class="sub">último año</div>
+    </div>
+    <div class="metric">
+      <div class="label">esta semana</div>
+      <div class="value accent" id="m-week">—</div>
+      <div class="sub" id="m-week-sub">tareas</div>
+    </div>
+    <div class="metric">
+      <div class="label">este mes</div>
+      <div class="value" id="m-month">—</div>
+      <div class="sub" id="m-month-sub">tareas</div>
+    </div>
+    <div class="metric">
+      <div class="label">racha actual</div>
+      <div class="value" id="m-streak">—</div>
+      <div class="sub">días seguidos</div>
+    </div>
+  </div>
+
+  <!-- heatmap -->
+  <div class="card">
+    <div class="card-title">
+      contribuciones · tareas completadas
+      <span class="count-badge" id="hm-badge">—</span>
+    </div>
+    <div id="heatmap-body">
+      <div class="state-msg"><span class="icon">◌</span>Configura tu Notion token arriba para comenzar.</div>
+    </div>
+    <div class="hm-footer">
+      <span id="hm-note" style="font-size:10px;color:var(--muted)"></span>
+      <div class="legend">
+        <span style="margin-right:4px">menos</span>
+        <div class="legend-cell" style="background:var(--faint)"></div>
+        <div class="legend-cell" style="background:var(--green1)"></div>
+        <div class="legend-cell" style="background:var(--green2)"></div>
+        <div class="legend-cell" style="background:var(--green3)"></div>
+        <div class="legend-cell" style="background:var(--green4)"></div>
+        <span style="margin-left:4px">más</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- charts -->
+  <div class="charts-row">
+    <div class="card" style="margin-bottom:0">
+      <div class="card-title">por día de la semana</div>
+      <div style="position:relative;height:130px">
+        <canvas id="chart-dow" role="img" aria-label="Actividad por día de la semana"></canvas>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:0">
+      <div class="card-title">tendencia mensual</div>
+      <div style="position:relative;height:130px">
+        <canvas id="chart-monthly" role="img" aria-label="Tareas completadas por mes"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- projects -->
+  <div class="card" style="margin-top:10px">
+    <div class="card-title">top proyectos</div>
+    <div id="project-bars">
+      <div class="state-msg" style="padding:1rem">—</div>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+/* ── config ── */
+const DEFAULT_DB = '1adef8fc-ea18-802a-b582-c586f9c2f465';
+let cfg = {
+  token: localStorage.getItem('vn_token') || '',
+  dbId:  localStorage.getItem('vn_dbid')  || DEFAULT_DB
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('inp-token').value = cfg.token;
+  document.getElementById('inp-dbid').value  = cfg.dbId;
+  if (cfg.token) {
+    document.getElementById('config-panel').removeAttribute('open');
+    loadData();
+  } else {
+    document.getElementById('config-panel').setAttribute('open', '');
+  }
+});
+
+function saveConfig() {
+  cfg.token = document.getElementById('inp-token').value.trim();
+  cfg.dbId  = document.getElementById('inp-dbid').value.trim() || DEFAULT_DB;
+  localStorage.setItem('vn_token', cfg.token);
+  localStorage.setItem('vn_dbid',  cfg.dbId);
+  document.getElementById('config-panel').removeAttribute('open');
+  loadData();
+}
+
+/* ── notion api ── */
+async function fetchNotion(cursor) {
+  const body = {
+    filter: { property: 'Estado', status: { equals: 'Listo' } },
+    page_size: 100
+  };
+  if (cursor) body.start_cursor = cursor;
+
+  const resp = await fetch(`https://api.notion.com/v1/databases/${cfg.dbId}/query`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${cfg.token}`,
+      'Notion-Version': '2022-06-28',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(body)
+  });
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({}));
+    throw new Error(err.message || `Error ${resp.status}`);
+  }
+  return resp.json();
+}
+
+async function fetchAll() {
+  let all = [], cursor = null;
+  do {
+    const data = await fetchNotion(cursor);
+    all = all.concat(data.results);
+    cursor = data.has_more ? data.next_cursor : null;
+  } while (cursor);
+  return all;
+}
+
+/* ── parse tasks ── */
+function parseTasks(pages) {
+  return pages.map(p => {
+    const props = p.properties;
+    const fechaStart = props['Fecha Inicio']?.date?.start || null;
+    const creadoEn   = p.created_time?.split('T')[0] || null;
+    const date = fechaStart ? fechaStart.split('T')[0] : creadoEn;
+
+    let project = '';
+    const rollup = props['Cliente Proyecto'];
+    if (rollup?.rollup?.array?.length) {
+      project = rollup.rollup.array[0]?.title?.[0]?.plain_text || '';
+    }
+    if (!project) {
+      const rel = props['Proyecto']?.relation;
+      if (rel?.length) project = rel[0].id.slice(0,8);
+    }
+
+    return { date, project };
+  }).filter(t => t.date);
+}
+
+/* ── main load ── */
+let chartDow = null, chartMonthly = null;
+
+async function loadData() {
+  if (!cfg.token) {
+    showError('Ingresa tu Notion Integration Token para continuar.');
+    document.getElementById('config-panel').setAttribute('open', '');
+    return;
+  }
+  hideError();
+  setLoading(true);
+
+  try {
+    const pages = await fetchAll();
+    const tasks = parseTasks(pages);
+    buildDashboard(tasks);
+  } catch(e) {
+    showError(`No se pudo conectar con Notion: ${e.message}`);
+    setLoading(false);
+  }
+}
+
+function setLoading(on) {
+  const btn = document.getElementById('btn-refresh');
+  btn.classList.toggle('loading', on);
+  if (on) {
+    document.getElementById('heatmap-body').innerHTML =
+      '<div class="state-msg"><span class="icon">◌</span>Consultando Notion...</div>';
+  }
+}
+
+function showError(msg) {
+  const el = document.getElementById('error-banner');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+function hideError() { document.getElementById('error-banner').style.display = 'none'; }
+
+/* ── build dashboard ── */
+function buildDashboard(tasks) {
+  const today = new Date();
+  const yearAgo = new Date(today); yearAgo.setFullYear(today.getFullYear() - 1);
+  const ya = yearAgo.toISOString().split('T')[0];
+  const td = today.toISOString().split('T')[0];
+
+  const byDate = {}, byProject = {};
+  tasks.forEach(t => {
+    if (t.date < ya) return;
+    byDate[t.date] = (byDate[t.date] || 0) + 1;
+    if (t.project) byProject[t.project] = (byProject[t.project] || 0) + 1;
+  });
+
+  const total = Object.values(byDate).reduce((a,b) => a+b, 0);
+
+  const weekStart = new Date(today);
+  weekStart.setDate(today.getDate() - today.getDay());
+  const ws = weekStart.toISOString().split('T')[0];
+  const ms = td.slice(0,7) + '-01';
+
+  const weekCount  = Object.entries(byDate).filter(([d]) => d >= ws).reduce((a,[,v]) => a+v, 0);
+  const monthCount = Object.entries(byDate).filter(([d]) => d >= ms).reduce((a,[,v]) => a+v, 0);
+
+  let streak = 0;
+  const chk = new Date(today);
+  while (true) {
+    const ds = chk.toISOString().split('T')[0];
+    if (byDate[ds]) { streak++; chk.setDate(chk.getDate()-1); } else break;
+  }
+
+  document.getElementById('m-total').textContent  = total;
+  document.getElementById('m-week').textContent   = weekCount;
+  document.getElementById('m-month').textContent  = monthCount;
+  document.getElementById('m-streak').textContent = streak;
+  document.getElementById('hm-badge').textContent = `${total} en el último año`;
+
+  const months = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  const from = yearAgo.toLocaleDateString('es-MX', {month:'short',year:'numeric'});
+  const to   = today.toLocaleDateString('es-MX',   {month:'short',year:'numeric'});
+  document.getElementById('date-range').innerHTML =
+    `${from} — ${to} &nbsp;·&nbsp; <span>${total} tareas completadas</span>`;
+
+  buildHeatmap(byDate, today, yearAgo, months);
+  buildCharts(byDate, today, months);
+  buildProjects(byProject);
+  setLoading(false);
+}
+
+/* ── heatmap ── */
+function buildHeatmap(byDate, today, yearAgo, months) {
+  const cells = [];
+  const cur = new Date(yearAgo);
+  cur.setDate(cur.getDate() - cur.getDay());
+  const td = today.toISOString().split('T')[0];
+  const ya = yearAgo.toISOString().split('T')[0];
+
+  while (cur <= today) {
+    const ds = cur.toISOString().split('T')[0];
+    const inRange = ds >= ya && ds <= td;
+    cells.push({
+      date: ds,
+      count: inRange ? (byDate[ds] || 0) : -1,
+      month: cur.getMonth(),
+      dow: cur.getDay()
+    });
+    cur.setDate(cur.getDate() + 1);
+  }
+
+  const weeks = [];
+  for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i+7));
+
+  /* month labels */
+  const monthLabels = [];
+  let lastM = -1;
+  weeks.forEach((w, wi) => {
+    const first = w.find(c => c.count >= 0);
+    if (first && first.month !== lastM) {
+      monthLabels.push({ wi, label: months[first.month] });
+      lastM = first.month;
+    }
+  });
+
+  function cellClass(count) {
+    if (count < 0) return 'out';
+    if (count === 0) return 'empty';
+    if (count === 1) return 'l1';
+    if (count <= 3) return 'l2';
+    if (count <= 6) return 'l3';
+    return 'l4';
+  }
+
+  /* build DOM */
+  const frag = document.createDocumentFragment();
+
+  /* month label row */
+  const monthRow = document.createElement('div');
+  monthRow.style.cssText = 'display:flex;gap:3px;margin-bottom:5px;min-width:max-content;height:14px;align-items:center';
+  let lastWi = 0;
+  monthLabels.forEach(({wi, label}) => {
+    const spacer = document.createElement('div');
+    spacer.style.cssText = `width:${(wi - lastWi) * 14}px;height:1px;flex-shrink:0`;
+    const lbl = document.createElement('span');
+    lbl.style.cssText = 'font-family:var(--mono);font-size:10px;color:var(--muted);flex-shrink:0';
+    lbl.textContent = label;
+    monthRow.appendChild(spacer);
+    monthRow.appendChild(lbl);
+    lastWi = wi;
+  });
+
+  const wrapOuter = document.createElement('div');
+  wrapOuter.style.cssText = 'display:flex;align-items:flex-start';
+
+  /* day labels */
+  const dayLbls = document.createElement('div');
+  dayLbls.className = 'hm-labels-days';
+  ['','lun','','mié','','vie',''].forEach(l => {
+    const s = document.createElement('span');
+    s.textContent = l;
+    dayLbls.appendChild(s);
+  });
+
+  const scrollWrap = document.createElement('div');
+  scrollWrap.className = 'heatmap-scroll';
+
+  const inner = document.createElement('div');
+  inner.style.cssText = 'display:flex;flex-direction:column';
+  inner.appendChild(monthRow);
+
+  const grid = document.createElement('div');
+  grid.style.cssText = 'display:flex;gap:3px;min-width:max-content';
+
+  weeks.forEach(week => {
+    const col = document.createElement('div');
+    col.className = 'hm-col';
+    week.forEach(c => {
+      const cell = document.createElement('div');
+      cell.className = `hm-cell ${cellClass(c.count)}`;
+      if (c.count >= 0) {
+        const dateLabel = new Date(c.date + 'T12:00:00').toLocaleDateString('es-MX', {weekday:'short',day:'numeric',month:'short'});
+        cell.addEventListener('mouseenter', e => showTooltip(e, `${dateLabel} · ${c.count} tarea${c.count!==1?'s':''}`));
+        cell.addEventListener('mouseleave', hideTooltip);
+        cell.addEventListener('mousemove', moveTooltip);
+      }
+      col.appendChild(cell);
+    });
+    grid.appendChild(col);
+  });
+
+  inner.appendChild(grid);
+  scrollWrap.appendChild(inner);
+  wrapOuter.appendChild(dayLbls);
+  wrapOuter.appendChild(scrollWrap);
+  frag.appendChild(wrapOuter);
+
+  document.getElementById('heatmap-body').innerHTML = '';
+  document.getElementById('heatmap-body').appendChild(frag);
+  document.getElementById('hm-note').textContent =
+    `${Object.keys(byDate).length} días con actividad registrada`;
+}
+
+/* ── tooltip ── */
+const tip = document.getElementById('tooltip');
+function showTooltip(e, text) { tip.textContent = text; tip.style.opacity = '1'; moveTooltip(e); }
+function hideTooltip() { tip.style.opacity = '0'; }
+function moveTooltip(e) {
+  tip.style.left = (e.clientX + 14) + 'px';
+  tip.style.top  = (e.clientY - 28) + 'px';
+}
+
+/* ── charts ── */
+function buildCharts(byDate, today, months) {
+  const textColor = 'rgba(255,255,255,0.28)';
+  const gridColor = 'rgba(255,255,255,0.05)';
+
+  /* day of week */
+  const dowCounts = [0,0,0,0,0,0,0];
+  Object.entries(byDate).forEach(([d, n]) => {
+    dowCounts[new Date(d + 'T12:00:00').getDay()] += n;
+  });
+
+  if (chartDow) chartDow.destroy();
+  chartDow = new Chart(document.getElementById('chart-dow'), {
+    type: 'bar',
+    data: {
+      labels: ['dom','lun','mar','mié','jue','vie','sáb'],
+      datasets: [{ data: dowCounts, backgroundColor: '#1e5c35', borderRadius: 3, hoverBackgroundColor: '#4ade80' }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.raw} tareas` } } },
+      scales: {
+        x: { ticks: { color: textColor, font: { size: 10 } }, grid: { display: false }, border: { display: false } },
+        y: { ticks: { color: textColor, font: { size: 10 } }, grid: { color: gridColor }, border: { display: false }, beginAtZero: true }
+      }
+    }
+  });
+
+  /* monthly trend */
+  const mLabels = [], mData = [];
+  for (let i = 11; i >= 0; i--) {
+    const d = new Date(today); d.setMonth(d.getMonth() - i);
+    const ym = d.toISOString().split('T')[0].slice(0,7);
+    const count = Object.entries(byDate).filter(([dt]) => dt.startsWith(ym)).reduce((a,[,v]) => a+v, 0);
+    mLabels.push(months[d.getMonth()]);
+    mData.push(count);
+  }
+
+  if (chartMonthly) chartMonthly.destroy();
+  chartMonthly = new Chart(document.getElementById('chart-monthly'), {
+    type: 'line',
+    data: {
+      labels: mLabels,
+      datasets: [{
+        data: mData,
+        borderColor: '#4ade80',
+        backgroundColor: 'rgba(74,222,128,0.06)',
+        tension: 0.4, fill: true,
+        pointBackgroundColor: '#4ade80',
+        pointRadius: 3,
+        pointHoverRadius: 5
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.raw} tareas` } } },
+      scales: {
+        x: { ticks: { color: textColor, font: { size: 10 } }, grid: { display: false }, border: { display: false } },
+        y: { ticks: { color: textColor, font: { size: 10 } }, grid: { color: gridColor }, border: { display: false }, beginAtZero: true }
+      }
+    }
+  });
+}
+
+/* ── projects ── */
+function buildProjects(byProject) {
+  const top = Object.entries(byProject).sort((a,b) => b[1]-a[1]).slice(0, 7);
+  const container = document.getElementById('project-bars');
+  if (!top.length) {
+    container.innerHTML = '<div class="state-msg" style="padding:1rem;font-size:12px">Sin datos de proyecto disponibles</div>';
+    return;
+  }
+  const max = top[0][1];
+  container.innerHTML = top.map(([name, count]) => {
+    const pct = Math.round((count / max) * 100);
+    const short = name.length > 28 ? name.slice(0,26)+'…' : name;
+    return `<div class="proj-row">
+      <span class="proj-name" title="${name}">${short}</span>
+      <div class="proj-track"><div class="proj-fill" style="width:${pct}%"></div></div>
+      <span class="proj-count">${count}</span>
+    </div>`;
+  }).join('');
+}
+</script>
+</body>
+</html>
