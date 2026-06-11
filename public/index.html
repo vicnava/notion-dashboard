@@ -22,7 +22,42 @@
     --green2: #40c463;
     --green3: #30a14e;
     --green4: #216e39;
+    --hm-hover: rgba(0,0,0,0.18);
+    --chart-tick: rgba(55,53,47,0.45);
+    --chart-grid: rgba(55,53,47,0.07);
+    --bar: #40c463;
+    --bar-hover: #216e39;
+    --line: #2da44e;
+    --line-fill: rgba(45,164,78,0.10);
+    --point: #2da44e;
     --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #191919;
+      --surface: #202020;
+      --surface2: #252525;
+      --border: rgba(255,255,255,0.094);
+      --border2: rgba(255,255,255,0.13);
+      --text: rgba(255,255,255,0.81);
+      --muted: #7f7f7d;
+      --faint: #2d2d2d;
+      --accent: #3fb950;
+      --accent-dim: rgba(63,185,80,0.14);
+      --green1: #0e4429;
+      --green2: #006d32;
+      --green3: #26a641;
+      --green4: #39d353;
+      --hm-hover: rgba(255,255,255,0.30);
+      --chart-tick: rgba(255,255,255,0.45);
+      --chart-grid: rgba(255,255,255,0.07);
+      --bar: #2ea043;
+      --bar-hover: #39d353;
+      --line: #3fb950;
+      --line-fill: rgba(63,185,80,0.12);
+      --point: #3fb950;
+    }
   }
 
   html, body { background: var(--bg); }
@@ -63,7 +98,7 @@
   .hm-labels-days { display: flex; flex-direction: column; gap: 3px; font-size: 9px; color: var(--muted); margin-right: 6px; flex-shrink: 0; }
   .hm-labels-days span { height: 11px; line-height: 11px; }
   .hm-cell { width: 11px; height: 11px; border-radius: 2px; cursor: default; }
-  .hm-cell:hover { outline: 1px solid rgba(0,0,0,0.18); outline-offset: -1px; }
+  .hm-cell:hover { outline: 1px solid var(--hm-hover); outline-offset: -1px; }
   .hm-cell.out    { background: transparent; }
   .hm-cell.empty  { background: var(--faint); }
   .hm-cell.l1     { background: var(--green1); }
@@ -200,6 +235,7 @@ function parseTasks(pages) {
 }
 
 let chartDow = null, chartMonthly = null;
+let _byDate = null, _today = null, _months = null;
 
 async function loadData() {
   setLoading(true);
@@ -255,6 +291,7 @@ function buildDashboard(tasks) {
   const to   = today.toLocaleDateString('es-MX',   {month:'short',year:'numeric'});
   document.getElementById('date-range').innerHTML = `${from} — ${to} &nbsp;·&nbsp; <span>${total} tareas completadas</span>`;
 
+  _byDate = byDate; _today = today; _months = months;
   buildHeatmap(byDate, today, yearAgo, months);
   buildCharts(byDate, today, months);
   buildProjects(byProject);
@@ -347,14 +384,16 @@ function hideTip() { tip.style.opacity = '0'; }
 function moveTip(e) { tip.style.left = (e.clientX+14)+'px'; tip.style.top = (e.clientY-28)+'px'; }
 
 function buildCharts(byDate, today, months) {
-  const tc = 'rgba(55,53,47,0.45)', gc = 'rgba(55,53,47,0.07)';
+  const css = getComputedStyle(document.documentElement);
+  const v = n => css.getPropertyValue(n).trim();
+  const tc = v('--chart-tick'), gc = v('--chart-grid');
   const dowCounts = [0,0,0,0,0,0,0];
   Object.entries(byDate).forEach(([d,n]) => { dowCounts[new Date(d+'T12:00:00').getDay()] += n; });
 
   if (chartDow) chartDow.destroy();
   chartDow = new Chart(document.getElementById('chart-dow'), {
     type: 'bar',
-    data: { labels: ['dom','lun','mar','mié','jue','vie','sáb'], datasets: [{ data: dowCounts, backgroundColor: '#40c463', borderRadius: 3, hoverBackgroundColor: '#216e39' }] },
+    data: { labels: ['dom','lun','mar','mié','jue','vie','sáb'], datasets: [{ data: dowCounts, backgroundColor: v('--bar'), borderRadius: 3, hoverBackgroundColor: v('--bar-hover') }] },
     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.raw} tareas` } } }, scales: { x: { ticks: { color: tc, font: { size: 10 } }, grid: { display: false }, border: { display: false } }, y: { ticks: { color: tc, font: { size: 10 } }, grid: { color: gc }, border: { display: false }, beginAtZero: true } } }
   });
 
@@ -368,7 +407,7 @@ function buildCharts(byDate, today, months) {
   if (chartMonthly) chartMonthly.destroy();
   chartMonthly = new Chart(document.getElementById('chart-monthly'), {
     type: 'line',
-    data: { labels: mLabels, datasets: [{ data: mData, borderColor: '#2da44e', backgroundColor: 'rgba(45,164,78,0.10)', tension: 0.4, fill: true, pointBackgroundColor: '#2da44e', pointRadius: 3, pointHoverRadius: 5 }] },
+    data: { labels: mLabels, datasets: [{ data: mData, borderColor: v('--line'), backgroundColor: v('--line-fill'), tension: 0.4, fill: true, pointBackgroundColor: v('--point'), pointRadius: 3, pointHoverRadius: 5 }] },
     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.raw} tareas` } } }, scales: { x: { ticks: { color: tc, font: { size: 10 } }, grid: { display: false }, border: { display: false } }, y: { ticks: { color: tc, font: { size: 10 } }, grid: { color: gc }, border: { display: false }, beginAtZero: true } } }
   });
 }
@@ -384,6 +423,10 @@ function buildProjects(byProject) {
     return `<div class="proj-row"><span class="proj-name" title="${name}">${short}</span><div class="proj-track"><div class="proj-fill" style="width:${pct}%"></div></div><span class="proj-count">${count}</span></div>`;
   }).join('');
 }
+
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+  if (_byDate) buildCharts(_byDate, _today, _months);
+});
 
 loadData();
 </script>
