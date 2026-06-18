@@ -411,8 +411,9 @@ function buildHeatmap(byDate, fromDate, toDate) {
   const avail = (document.getElementById('heatmap-body').clientWidth || 780) - 28;
   const natural = weeks.length*11 + (weeks.length-1)*GAP;
   const fill = natural <= avail;
-  const cell = fill ? Math.max(11, Math.min(26, Math.floor((avail - (weeks.length-1)*GAP) / weeks.length))) : 11;
-  const stride = cell + GAP;
+  const cw = fill ? Math.max(11, Math.min(60, Math.floor((avail - (weeks.length-1)*GAP) / weeks.length))) : 11; // ancho: rellena todo
+  const ch = fill ? Math.min(cw, 30) : 11; // alto: con tope para no crecer de más
+  const stride = cw + GAP;
 
   const monthLabels = []; let lastM = -1;
   weeks.forEach((w, wi) => { const f = w.find(c => c.count >= 0); if (f && f.month !== lastM) { monthLabels.push({wi, label: MONTHS[f.month]}); lastM = f.month; } });
@@ -421,7 +422,7 @@ function buildHeatmap(byDate, fromDate, toDate) {
   wrap.style.cssText = `display:flex;align-items:flex-start;justify-content:${fill?'center':'flex-start'}`;
 
   const dayLbls = document.createElement('div'); dayLbls.className = 'hm-labels-days'; dayLbls.style.gap = GAP+'px';
-  ['lun','','mié','','vie','',''].forEach(l => { const s = document.createElement('span'); s.textContent = l; s.style.height = cell+'px'; s.style.lineHeight = cell+'px'; dayLbls.appendChild(s); });
+  ['lun','','mié','','vie','',''].forEach(l => { const s = document.createElement('span'); s.textContent = l; s.style.height = ch+'px'; s.style.lineHeight = ch+'px'; dayLbls.appendChild(s); });
 
   const scroll = document.createElement('div'); scroll.className = 'hm-scroll';
   scroll.style.cssText = fill ? 'flex:0 0 auto' : 'overflow-x:auto;flex:1';
@@ -436,7 +437,7 @@ function buildHeatmap(byDate, fromDate, toDate) {
     const col = document.createElement('div'); col.style.cssText = `display:flex;flex-direction:column;gap:${GAP}px`;
     week.forEach(c => {
       const el = document.createElement('div'); el.className = `hm-cell ${level(c.count)}`;
-      el.style.width = cell+'px'; el.style.height = cell+'px';
+      el.style.width = cw+'px'; el.style.height = ch+'px';
       if (c.count >= 0) {
         const dl = new Date(c.date + 'T12:00:00').toLocaleDateString('es-MX', {weekday:'short',day:'numeric',month:'short'});
         el.addEventListener('mouseenter', e => showTip(e, `${dl} · ${c.count} tarea${c.count!==1?'s':''}`));
