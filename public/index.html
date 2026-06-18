@@ -405,31 +405,44 @@ function buildHeatmap(byDate, fromDate, toDate) {
   }
   const weeks = []; for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i+7));
 
+  // Tamaño de celda: en rangos cortos las celdas crecen para rellenar el ancho
+  // disponible (cuadradas, con tope); en "Año" se mantienen 11px + scroll.
+  const GAP = 3;
+  const avail = (document.getElementById('heatmap-body').clientWidth || 780) - 28;
+  const natural = weeks.length*11 + (weeks.length-1)*GAP;
+  const fill = natural <= avail;
+  const cell = fill ? Math.max(11, Math.min(26, Math.floor((avail - (weeks.length-1)*GAP) / weeks.length))) : 11;
+  const stride = cell + GAP;
+
   const monthLabels = []; let lastM = -1;
   weeks.forEach((w, wi) => { const f = w.find(c => c.count >= 0); if (f && f.month !== lastM) { monthLabels.push({wi, label: MONTHS[f.month]}); lastM = f.month; } });
 
-  const wrap = document.createElement('div'); wrap.style.cssText = 'display:flex;align-items:flex-start';
-  const dayLbls = document.createElement('div'); dayLbls.className = 'hm-labels-days';
-  ['lun','','mié','','vie','',''].forEach(l => { const s = document.createElement('span'); s.textContent = l; dayLbls.appendChild(s); });
+  const wrap = document.createElement('div');
+  wrap.style.cssText = `display:flex;align-items:flex-start;justify-content:${fill?'center':'flex-start'}`;
 
-  const scroll = document.createElement('div'); scroll.className = 'hm-scroll'; scroll.style.cssText = 'overflow-x:auto;flex:1';
+  const dayLbls = document.createElement('div'); dayLbls.className = 'hm-labels-days'; dayLbls.style.gap = GAP+'px';
+  ['lun','','mié','','vie','',''].forEach(l => { const s = document.createElement('span'); s.textContent = l; s.style.height = cell+'px'; s.style.lineHeight = cell+'px'; dayLbls.appendChild(s); });
+
+  const scroll = document.createElement('div'); scroll.className = 'hm-scroll';
+  scroll.style.cssText = fill ? 'flex:0 0 auto' : 'overflow-x:auto;flex:1';
   const inner = document.createElement('div'); inner.style.cssText = 'display:flex;flex-direction:column';
 
   const mRow = document.createElement('div');
-  mRow.style.cssText = `position:relative;margin-bottom:5px;height:14px;width:${weeks.length*14}px;font-size:10px;color:var(--muted)`;
-  monthLabels.forEach(({wi, label}) => { const lb = document.createElement('span'); lb.style.cssText = `position:absolute;left:${wi*14}px;white-space:nowrap`; lb.textContent = label; mRow.appendChild(lb); });
+  mRow.style.cssText = `position:relative;margin-bottom:5px;height:14px;width:${weeks.length*stride}px;font-size:10px;color:var(--muted)`;
+  monthLabels.forEach(({wi, label}) => { const lb = document.createElement('span'); lb.style.cssText = `position:absolute;left:${wi*stride}px;white-space:nowrap`; lb.textContent = label; mRow.appendChild(lb); });
 
-  const grid = document.createElement('div'); grid.style.cssText = 'display:flex;gap:3px;min-width:max-content';
+  const grid = document.createElement('div'); grid.style.cssText = `display:flex;gap:${GAP}px;min-width:max-content`;
   weeks.forEach(week => {
-    const col = document.createElement('div'); col.style.cssText = 'display:flex;flex-direction:column;gap:3px';
+    const col = document.createElement('div'); col.style.cssText = `display:flex;flex-direction:column;gap:${GAP}px`;
     week.forEach(c => {
-      const cell = document.createElement('div'); cell.className = `hm-cell ${level(c.count)}`;
+      const el = document.createElement('div'); el.className = `hm-cell ${level(c.count)}`;
+      el.style.width = cell+'px'; el.style.height = cell+'px';
       if (c.count >= 0) {
         const dl = new Date(c.date + 'T12:00:00').toLocaleDateString('es-MX', {weekday:'short',day:'numeric',month:'short'});
-        cell.addEventListener('mouseenter', e => showTip(e, `${dl} · ${c.count} tarea${c.count!==1?'s':''}`));
-        cell.addEventListener('mouseleave', hideTip); cell.addEventListener('mousemove', moveTip);
+        el.addEventListener('mouseenter', e => showTip(e, `${dl} · ${c.count} tarea${c.count!==1?'s':''}`));
+        el.addEventListener('mouseleave', hideTip); el.addEventListener('mousemove', moveTip);
       }
-      col.appendChild(cell);
+      col.appendChild(el);
     });
     grid.appendChild(col);
   });
@@ -437,7 +450,7 @@ function buildHeatmap(byDate, fromDate, toDate) {
   inner.appendChild(mRow); inner.appendChild(grid); scroll.appendChild(inner);
   wrap.appendChild(dayLbls); wrap.appendChild(scroll);
   const body = document.getElementById('heatmap-body'); body.innerHTML = ''; body.appendChild(wrap);
-  scroll.scrollLeft = scroll.scrollWidth;
+  if (!fill) scroll.scrollLeft = scroll.scrollWidth;
 }
 
 /* ---------- calendario mensual (Mes) ---------- */
