@@ -30,6 +30,7 @@
     --line: #2da44e;
     --line-fill: rgba(45,164,78,0.10);
     --point: #2da44e;
+    --shadow: rgba(0,0,0,0.06);
     --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
   }
 
@@ -57,6 +58,7 @@
       --line: #3fb950;
       --line-fill: rgba(63,185,80,0.12);
       --point: #3fb950;
+      --shadow: rgba(0,0,0,0.3);
     }
   }
 
@@ -72,7 +74,7 @@
 
   .shell { max-width: 880px; margin: 0 auto; padding: 1.1rem 1.25rem 1.75rem; }
 
-  .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; gap: 1rem; }
+  .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.85rem; gap: 1rem; }
   .topbar-left h1 { font-size: 15px; font-weight: 600; color: var(--text); letter-spacing: -0.01em; }
   .topbar-left .sub { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
   .topbar-left .sub span { color: var(--accent); font-weight: 500; }
@@ -82,6 +84,18 @@
   .btn-refresh svg { width: 13px; height: 13px; }
   .btn-refresh.loading svg { animation: spin 0.8s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* controles de periodo */
+  .controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 0.85rem; }
+  .seg { display: inline-flex; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 2px; gap: 2px; }
+  .seg button { border: 0; background: transparent; color: var(--muted); font: inherit; font-size: 12px; padding: 5px 12px; border-radius: 6px; cursor: pointer; transition: background 0.12s, color 0.12s; }
+  .seg button:hover { color: var(--text); }
+  .seg button.active { background: var(--surface); color: var(--text); box-shadow: 0 1px 2px var(--shadow); font-weight: 500; }
+  .ctl-extra { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); }
+  .ctl-extra button { border: 1px solid var(--border2); background: var(--surface); color: var(--text); border-radius: 6px; width: 26px; height: 26px; cursor: pointer; font-size: 14px; line-height: 1; display: flex; align-items: center; justify-content: center; }
+  .ctl-extra button:disabled { opacity: 0.35; cursor: default; }
+  .ctl-extra input[type=date] { font: inherit; font-size: 12px; padding: 4px 7px; border: 1px solid var(--border2); border-radius: 6px; background: var(--surface); color: var(--text); }
+  .ctl-month { min-width: 130px; text-align: center; color: var(--text); font-weight: 500; text-transform: capitalize; }
 
   .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 0.85rem; }
   @media (max-width: 560px) { .metrics { grid-template-columns: repeat(2, 1fr); } }
@@ -117,9 +131,22 @@
   .legend { display: flex; align-items: center; gap: 3px; }
   .legend-cell { width: 10px; height: 10px; border-radius: 2px; }
 
+  /* calendario mensual */
+  .cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+  .cal-head { font-size: 10px; color: var(--muted); text-align: center; padding-bottom: 2px; text-transform: capitalize; }
+  .cal-cell { height: 40px; border-radius: 6px; display: flex; align-items: flex-start; justify-content: flex-end; padding: 4px 6px; font-size: 11px; font-weight: 500; }
+  .cal-cell.blank { background: transparent; }
+  .cal-cell.empty { background: var(--faint); color: var(--muted); }
+  .cal-cell.l1 { background: var(--green1); color: var(--text); }
+  .cal-cell.l2 { background: var(--green2); color: #fff; }
+  .cal-cell.l3 { background: var(--green3); color: #fff; }
+  .cal-cell.l4 { background: var(--green4); color: #fff; }
+  .cal-cell.today { outline: 2px solid var(--accent); outline-offset: -2px; }
+
   .charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 0.7rem; }
   @media (max-width: 560px) { .charts-row { grid-template-columns: 1fr; } }
 
+  .bars-empty { font-size: 12px; color: var(--muted); padding: 0.5rem 0; }
   .proj-row { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
   .proj-row:last-child { margin-bottom: 0; }
   .proj-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
@@ -129,7 +156,6 @@
   .proj-count { font-size: 11px; font-weight: 600; color: var(--muted); flex-shrink: 0; }
 
   .state-msg { text-align: center; padding: 1.75rem; color: var(--muted); font-size: 13px; }
-
   .error-banner { background: #fdf0ef; border: 1px solid #f5c6c2; border-radius: 7px; padding: 10px 14px; font-size: 12px; color: #c0392b; margin-bottom: 0.7rem; display: none; }
 
   #tooltip { position: fixed; background: #2f2f2f; border: 1px solid #444; border-radius: 6px; padding: 5px 9px; font-size: 11px; color: #fff; pointer-events: none; z-index: 1000; opacity: 0; transition: opacity 0.1s; white-space: nowrap; }
@@ -153,10 +179,20 @@
     </button>
   </div>
 
+  <div class="controls">
+    <div class="seg" id="seg">
+      <button data-mode="anio" class="active">Año</button>
+      <button data-mode="trim">90 días</button>
+      <button data-mode="mes">Mes</button>
+      <button data-mode="custom">Personalizado</button>
+    </div>
+    <div class="ctl-extra" id="ctl-extra"></div>
+  </div>
+
   <div class="error-banner" id="error-banner"></div>
 
   <div class="metrics">
-    <div class="metric"><div class="label">total completadas</div><div class="value" id="m-total">—</div><div class="sub">último año</div></div>
+    <div class="metric"><div class="label">total completadas</div><div class="value" id="m-total">—</div><div class="sub" id="m-total-sub">en el período</div></div>
     <div class="metric"><div class="label">esta semana</div><div class="value accent" id="m-week">—</div><div class="sub">tareas</div></div>
     <div class="metric"><div class="label">este mes</div><div class="value" id="m-month">—</div><div class="sub">tareas</div></div>
     <div class="metric"><div class="label">racha actual</div><div class="value" id="m-streak">—</div><div class="sub">días seguidos</div></div>
@@ -185,14 +221,25 @@
       <div style="position:relative;height:110px"><canvas id="chart-dow" role="img" aria-label="Actividad por día de la semana"></canvas></div>
     </div>
     <div class="card" style="margin-bottom:0">
-      <div class="card-title">tendencia mensual</div>
-      <div style="position:relative;height:110px"><canvas id="chart-monthly" role="img" aria-label="Tareas completadas por mes"></canvas></div>
+      <div class="card-title" id="trend-title">tendencia mensual</div>
+      <div style="position:relative;height:110px"><canvas id="chart-trend" role="img" aria-label="Tendencia de tareas completadas"></canvas></div>
+    </div>
+  </div>
+
+  <div class="charts-row">
+    <div class="card" style="margin-bottom:0">
+      <div class="card-title">por tipo de tarea</div>
+      <div id="type-bars"><div class="bars-empty">—</div></div>
+    </div>
+    <div class="card" style="margin-bottom:0">
+      <div class="card-title">por cliente</div>
+      <div id="client-bars"><div class="bars-empty">—</div></div>
     </div>
   </div>
 
   <div class="card" style="margin-top:0.7rem;margin-bottom:0">
     <div class="card-title">top proyectos</div>
-    <div id="project-bars"><div class="state-msg" style="padding:1rem">—</div></div>
+    <div id="project-bars"><div class="bars-empty">—</div></div>
   </div>
 
 </div>
@@ -200,60 +247,52 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
 const DB_ID = '1adef8fc-ea18-802a-b582-c586f9c2f465';
+const MONTHS = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
 const localISO = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
+let allTasks = [];
+let chartDow = null, chartTrend = null;
+const firstOfMonth = d => new Date(d.getFullYear(), d.getMonth(), 1);
+const state = { mode: 'anio', monthAnchor: firstOfMonth(new Date()), customFrom: null, customTo: null };
+
+/* ---------- carga de datos ---------- */
 async function fetchPage(cursor) {
   const body = { dbId: DB_ID };
   if (cursor) body.cursor = cursor;
   const resp = await fetch('/api/notion', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
   });
-  if (!resp.ok) {
-    const err = await resp.json().catch(() => ({}));
-    throw new Error(err.message || `Error ${resp.status}`);
-  }
+  if (!resp.ok) { const err = await resp.json().catch(() => ({})); throw new Error(err.message || `Error ${resp.status}`); }
   return resp.json();
 }
-
 async function fetchAll() {
   let all = [], cursor = null;
-  do {
-    const data = await fetchPage(cursor);
-    all = all.concat(data.results);
-    cursor = data.has_more ? data.next_cursor : null;
-  } while (cursor);
+  do { const data = await fetchPage(cursor); all = all.concat(data.results); cursor = data.has_more ? data.next_cursor : null; } while (cursor);
   return all;
 }
-
 function parseTasks(pages) {
   return pages.map(p => {
     const props = p.properties;
-    const fechaStart = props['Fecha Inicio']?.date?.start || null;
-    const date = fechaStart ? fechaStart.split('T')[0] : p.created_time?.split('T')[0];
+    const fi = props['Fecha Inicio']?.date?.start || null;
+    const date = fi ? fi.split('T')[0] : p.created_time?.split('T')[0];
     let project = '';
-    const rollup = props['Cliente Proyecto'];
-    if (rollup?.rollup?.array?.length) project = rollup.rollup.array[0]?.title?.[0]?.plain_text || '';
-    return { date, project };
+    const rp = props['Cliente Proyecto'];
+    if (rp?.rollup?.array?.length) project = rp.rollup.array[0]?.title?.[0]?.plain_text || '';
+    const tipo = props['Tipo']?.select?.name || '';
+    const clientes = [];
+    (props['Cliente']?.rollup?.array || []).forEach(it => {
+      if (it.type === 'multi_select') it.multi_select.forEach(o => { if (!clientes.includes(o.name)) clientes.push(o.name); });
+    });
+    return { date, project, tipo, clientes };
   }).filter(t => t.date);
 }
 
-let chartDow = null, chartMonthly = null;
-let _byDate = null, _today = null, _months = null;
-
 async function loadData() {
-  setLoading(true);
-  hideError();
-  try {
-    const pages = await fetchAll();
-    buildDashboard(parseTasks(pages));
-  } catch(e) {
-    showError(`Error: ${e.message}`);
-    setLoading(false);
-  }
+  setLoading(true); hideError();
+  try { allTasks = parseTasks(await fetchAll()); render(); }
+  catch(e) { showError(`Error: ${e.message}`); setLoading(false); }
 }
-
 function setLoading(on) {
   document.getElementById('btn-refresh').classList.toggle('loading', on);
   if (on) document.getElementById('heatmap-body').innerHTML = '<div class="state-msg">consultando notion…</div>';
@@ -261,179 +300,251 @@ function setLoading(on) {
 function showError(msg) { const el = document.getElementById('error-banner'); el.textContent = msg; el.style.display = 'block'; }
 function hideError() { document.getElementById('error-banner').style.display = 'none'; }
 
-function buildDashboard(tasks) {
+/* ---------- período ---------- */
+function rangeOf() {
   const today = new Date();
-  const yearAgo = new Date(today); yearAgo.setFullYear(today.getFullYear() - 1);
-  const ya = localISO(yearAgo);
+  if (state.mode === 'trim') { const f = new Date(today); f.setDate(f.getDate() - 89); return { from: f, to: today }; }
+  if (state.mode === 'mes')  { const a = state.monthAnchor; return { from: new Date(a.getFullYear(), a.getMonth(), 1), to: new Date(a.getFullYear(), a.getMonth()+1, 0) }; }
+  if (state.mode === 'custom') {
+    const f = state.customFrom || (()=>{ const x=new Date(today); x.setDate(x.getDate()-89); return x; })();
+    const t = state.customTo || today;
+    return { from: f, to: t };
+  }
+  const f = new Date(today); f.setFullYear(f.getFullYear() - 1); // anio
+  return { from: f, to: today };
+}
 
-  const byDate = {}, byProject = {};
+function renderControls() {
+  document.querySelectorAll('#seg button').forEach(b => b.classList.toggle('active', b.dataset.mode === state.mode));
+  const ex = document.getElementById('ctl-extra');
+  const today = new Date();
+  if (state.mode === 'mes') {
+    const a = state.monthAnchor;
+    const label = a.toLocaleDateString('es-MX', { month: 'long', year: 'numeric' });
+    const isCurrent = a.getFullYear() === today.getFullYear() && a.getMonth() === today.getMonth();
+    ex.innerHTML = `<button id="m-prev">‹</button><span class="ctl-month">${label}</span><button id="m-next"${isCurrent?' disabled':''}>›</button>`;
+    document.getElementById('m-prev').onclick = () => { state.monthAnchor = new Date(a.getFullYear(), a.getMonth()-1, 1); render(); };
+    const nx = document.getElementById('m-next'); if (!isCurrent) nx.onclick = () => { state.monthAnchor = new Date(a.getFullYear(), a.getMonth()+1, 1); render(); };
+  } else if (state.mode === 'custom') {
+    const r = rangeOf();
+    ex.innerHTML = `<input type="date" id="c-from" value="${localISO(r.from)}"> <span>—</span> <input type="date" id="c-to" value="${localISO(r.to)}">`;
+    const upd = () => {
+      const f = document.getElementById('c-from').value, t = document.getElementById('c-to').value;
+      if (f && t && f <= t) { state.customFrom = new Date(f + 'T12:00:00'); state.customTo = new Date(t + 'T12:00:00'); render(); }
+    };
+    document.getElementById('c-from').onchange = upd; document.getElementById('c-to').onchange = upd;
+  } else { ex.innerHTML = ''; }
+}
+
+/* ---------- render principal ---------- */
+function render() {
+  renderControls();
+  const { from, to } = rangeOf();
+  const fromS = localISO(from), toS = localISO(to);
+  const tasks = allTasks.filter(t => t.date >= fromS && t.date <= toS);
+
+  const byDate = {}, byProject = {}, byType = {}, byClient = {};
   tasks.forEach(t => {
-    if (t.date < ya) return;
     byDate[t.date] = (byDate[t.date] || 0) + 1;
     if (t.project) byProject[t.project] = (byProject[t.project] || 0) + 1;
+    if (t.tipo) byType[t.tipo] = (byType[t.tipo] || 0) + 1;
+    t.clientes.forEach(c => byClient[c] = (byClient[c] || 0) + 1);
   });
+  const total = tasks.length;
 
-  const total = Object.values(byDate).reduce((a,b) => a+b, 0);
+  /* KPIs: total = período; semana/mes/racha = vivos (fecha actual) */
+  const today = new Date();
   const td = localISO(today);
-  const weekStart = new Date(today); weekStart.setDate(today.getDate() - ((today.getDay()+6)%7));
-  const ws = localISO(weekStart);
+  const ws = (() => { const d = new Date(today); d.setDate(d.getDate() - ((d.getDay()+6)%7)); return localISO(d); })();
   const ms = td.slice(0,7) + '-01';
-  const weekCount  = Object.entries(byDate).filter(([d]) => d >= ws).reduce((a,[,v]) => a+v, 0);
-  const monthCount = Object.entries(byDate).filter(([d]) => d >= ms).reduce((a,[,v]) => a+v, 0);
-
-  let streak = 0;
-  const chk = new Date(today);
-  // el día de hoy sigue en curso: si aún no hay actividad, cuenta desde ayer
-  if (!byDate[localISO(chk)]) chk.setDate(chk.getDate()-1);
-  while (byDate[localISO(chk)]) { streak++; chk.setDate(chk.getDate()-1); }
+  const liveDate = {};
+  allTasks.forEach(t => { liveDate[t.date] = (liveDate[t.date] || 0) + 1; });
+  const weekCount = Object.entries(liveDate).filter(([d]) => d >= ws).reduce((a,[,v]) => a+v, 0);
+  const monthCount = Object.entries(liveDate).filter(([d]) => d >= ms).reduce((a,[,v]) => a+v, 0);
+  let streak = 0; const chk = new Date(today);
+  if (!liveDate[localISO(chk)]) chk.setDate(chk.getDate()-1);
+  while (liveDate[localISO(chk)]) { streak++; chk.setDate(chk.getDate()-1); }
 
   document.getElementById('m-total').textContent  = total;
   document.getElementById('m-week').textContent   = weekCount;
   document.getElementById('m-month').textContent  = monthCount;
   document.getElementById('m-streak').textContent = streak;
-  document.getElementById('hm-badge').textContent = `${total} en el último año`;
 
-  const months = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
-  const from = yearAgo.toLocaleDateString('es-MX', {month:'short',year:'numeric'});
-  const to   = today.toLocaleDateString('es-MX',   {month:'short',year:'numeric'});
-  document.getElementById('date-range').innerHTML = `${from} — ${to} &nbsp;·&nbsp; <span>${total} tareas completadas</span>`;
+  const fromLbl = from.toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' });
+  const toLbl   = to.toLocaleDateString('es-MX',   { day: 'numeric', month: 'short', year: 'numeric' });
+  document.getElementById('date-range').innerHTML = `${fromLbl} — ${toLbl} &nbsp;·&nbsp; <span>${total} tareas completadas</span>`;
+  document.getElementById('hm-badge').textContent = `${total} en el período`;
+  document.getElementById('m-total-sub').textContent = state.mode === 'anio' ? 'último año' : 'en el período';
+  document.getElementById('hm-note').textContent = `${Object.keys(byDate).length} días con actividad`;
 
-  _byDate = byDate; _today = today; _months = months;
-  buildHeatmap(byDate, today, yearAgo, months);
-  buildCharts(byDate, today, months);
-  buildProjects(byProject);
+  if (state.mode === 'mes') buildMonthCalendar(byDate, state.monthAnchor);
+  else buildHeatmap(byDate, from, to);
+
+  buildDow(byDate);
+  buildTrend(byDate, from, to);
+
+  renderBars('type-bars', Object.entries(byType).sort((a,b)=>b[1]-a[1]).slice(0,6), 'sin datos de tipo');
+  renderBars('client-bars', Object.entries(byClient).sort((a,b)=>b[1]-a[1]).slice(0,6), 'sin datos de cliente');
+  renderBars('project-bars', Object.entries(byProject).sort((a,b)=>b[1]-a[1]).slice(0,5), 'sin datos de proyecto');
+
   setLoading(false);
 }
 
-function buildHeatmap(byDate, today, yearAgo, months) {
-  const cells = [];
-  const cur = new Date(yearAgo);
-  cur.setDate(cur.getDate() - ((cur.getDay()+6)%7));
-  const ya = localISO(yearAgo);
-  const td = localISO(today);
+function level(n) { if (n < 0) return 'out'; if (!n) return 'empty'; if (n===1) return 'l1'; if (n<=3) return 'l2'; if (n<=6) return 'l3'; return 'l4'; }
 
-  while (cur <= today) {
+/* ---------- heatmap semanal (Año / 90 días / Personalizado) ---------- */
+function buildHeatmap(byDate, fromDate, toDate) {
+  const cells = [];
+  const start = new Date(fromDate); start.setDate(start.getDate() - ((start.getDay()+6)%7)); // lunes
+  const fromS = localISO(fromDate), toS = localISO(toDate);
+  const cur = new Date(start);
+  while (cur <= toDate) {
     const ds = localISO(cur);
-    cells.push({ date: ds, count: (ds >= ya && ds <= td) ? (byDate[ds] || 0) : -1, month: cur.getMonth() });
+    cells.push({ date: ds, count: (ds >= fromS && ds <= toS) ? (byDate[ds] || 0) : -1, month: cur.getMonth() });
     cur.setDate(cur.getDate() + 1);
   }
+  const weeks = []; for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i+7));
 
-  const weeks = [];
-  for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i+7));
+  const monthLabels = []; let lastM = -1;
+  weeks.forEach((w, wi) => { const f = w.find(c => c.count >= 0); if (f && f.month !== lastM) { monthLabels.push({wi, label: MONTHS[f.month]}); lastM = f.month; } });
 
-  const monthLabels = [];
-  let lastM = -1;
-  weeks.forEach((w, wi) => {
-    const f = w.find(c => c.count >= 0);
-    if (f && f.month !== lastM) { monthLabels.push({wi, label: months[f.month]}); lastM = f.month; }
-  });
-
-  function cls(n) { if (n < 0) return 'out'; if (!n) return 'empty'; if (n===1) return 'l1'; if (n<=3) return 'l2'; if (n<=6) return 'l3'; return 'l4'; }
-
-  const wrap = document.createElement('div');
-  wrap.style.cssText = 'display:flex;align-items:flex-start';
-
-  const dayLbls = document.createElement('div');
-  dayLbls.className = 'hm-labels-days';
+  const wrap = document.createElement('div'); wrap.style.cssText = 'display:flex;align-items:flex-start';
+  const dayLbls = document.createElement('div'); dayLbls.className = 'hm-labels-days';
   ['lun','','mié','','vie','',''].forEach(l => { const s = document.createElement('span'); s.textContent = l; dayLbls.appendChild(s); });
 
-  const scroll = document.createElement('div');
-  scroll.className = 'hm-scroll';
-  scroll.style.cssText = 'overflow-x:auto;flex:1';
-
-  const inner = document.createElement('div');
-  inner.style.cssText = 'display:flex;flex-direction:column';
+  const scroll = document.createElement('div'); scroll.className = 'hm-scroll'; scroll.style.cssText = 'overflow-x:auto;flex:1';
+  const inner = document.createElement('div'); inner.style.cssText = 'display:flex;flex-direction:column';
 
   const mRow = document.createElement('div');
   mRow.style.cssText = `position:relative;margin-bottom:5px;height:14px;width:${weeks.length*14}px;font-size:10px;color:var(--muted)`;
-  monthLabels.forEach(({wi, label}) => {
-    const lb = document.createElement('span');
-    lb.style.cssText = `position:absolute;left:${wi*14}px;white-space:nowrap`;
-    lb.textContent = label;
-    mRow.appendChild(lb);
-  });
+  monthLabels.forEach(({wi, label}) => { const lb = document.createElement('span'); lb.style.cssText = `position:absolute;left:${wi*14}px;white-space:nowrap`; lb.textContent = label; mRow.appendChild(lb); });
 
-  const grid = document.createElement('div');
-  grid.style.cssText = 'display:flex;gap:3px;min-width:max-content';
+  const grid = document.createElement('div'); grid.style.cssText = 'display:flex;gap:3px;min-width:max-content';
   weeks.forEach(week => {
-    const col = document.createElement('div');
-    col.style.cssText = 'display:flex;flex-direction:column;gap:3px';
+    const col = document.createElement('div'); col.style.cssText = 'display:flex;flex-direction:column;gap:3px';
     week.forEach(c => {
-      const cell = document.createElement('div');
-      cell.className = `hm-cell ${cls(c.count)}`;
+      const cell = document.createElement('div'); cell.className = `hm-cell ${level(c.count)}`;
       if (c.count >= 0) {
         const dl = new Date(c.date + 'T12:00:00').toLocaleDateString('es-MX', {weekday:'short',day:'numeric',month:'short'});
         cell.addEventListener('mouseenter', e => showTip(e, `${dl} · ${c.count} tarea${c.count!==1?'s':''}`));
-        cell.addEventListener('mouseleave', hideTip);
-        cell.addEventListener('mousemove', moveTip);
+        cell.addEventListener('mouseleave', hideTip); cell.addEventListener('mousemove', moveTip);
       }
       col.appendChild(cell);
     });
     grid.appendChild(col);
   });
 
-  inner.appendChild(mRow);
-  inner.appendChild(grid);
-  scroll.appendChild(inner);
-  wrap.appendChild(dayLbls);
-  wrap.appendChild(scroll);
-
-  document.getElementById('heatmap-body').innerHTML = '';
-  document.getElementById('heatmap-body').appendChild(wrap);
-  document.getElementById('hm-note').textContent = `${Object.keys(byDate).length} días con actividad`;
-  // arranca mostrando lo más reciente
+  inner.appendChild(mRow); inner.appendChild(grid); scroll.appendChild(inner);
+  wrap.appendChild(dayLbls); wrap.appendChild(scroll);
+  const body = document.getElementById('heatmap-body'); body.innerHTML = ''; body.appendChild(wrap);
   scroll.scrollLeft = scroll.scrollWidth;
 }
 
+/* ---------- calendario mensual (Mes) ---------- */
+function buildMonthCalendar(byDate, anchor) {
+  const year = anchor.getFullYear(), month = anchor.getMonth();
+  const first = new Date(year, month, 1);
+  const lead = (first.getDay()+6)%7; // lunes=0
+  const days = new Date(year, month+1, 0).getDate();
+  const td = localISO(new Date());
+
+  const cal = document.createElement('div'); cal.className = 'cal';
+  ['lun','mar','mié','jue','vie','sáb','dom'].forEach(d => { const h = document.createElement('div'); h.className = 'cal-head'; h.textContent = d; cal.appendChild(h); });
+  for (let i = 0; i < lead; i++) { const b = document.createElement('div'); b.className = 'cal-cell blank'; cal.appendChild(b); }
+  for (let d = 1; d <= days; d++) {
+    const ds = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const n = byDate[ds] || 0;
+    const cell = document.createElement('div');
+    cell.className = `cal-cell ${level(n)}${ds===td?' today':''}`;
+    cell.textContent = d;
+    const dl = new Date(ds + 'T12:00:00').toLocaleDateString('es-MX', {weekday:'short',day:'numeric',month:'short'});
+    cell.addEventListener('mouseenter', e => showTip(e, `${dl} · ${n} tarea${n!==1?'s':''}`));
+    cell.addEventListener('mouseleave', hideTip); cell.addEventListener('mousemove', moveTip);
+    cal.appendChild(cell);
+  }
+  const body = document.getElementById('heatmap-body'); body.innerHTML = ''; body.appendChild(cal);
+}
+
+/* ---------- tooltip ---------- */
 const tip = document.getElementById('tooltip');
 function showTip(e, t) { tip.textContent = t; tip.style.opacity = '1'; moveTip(e); }
 function hideTip() { tip.style.opacity = '0'; }
 function moveTip(e) { tip.style.left = (e.clientX+14)+'px'; tip.style.top = (e.clientY-28)+'px'; }
 
-function buildCharts(byDate, today, months) {
-  const css = getComputedStyle(document.documentElement);
-  const v = n => css.getPropertyValue(n).trim();
-  const tc = v('--chart-tick'), gc = v('--chart-grid');
-  const dowCounts = [0,0,0,0,0,0,0];
-  Object.entries(byDate).forEach(([d,n]) => { dowCounts[new Date(d+'T12:00:00').getDay()] += n; });
+/* ---------- gráficas ---------- */
+function chartColors() { const c = getComputedStyle(document.documentElement); return n => c.getPropertyValue(n).trim(); }
 
+function buildDow(byDate) {
+  const v = chartColors();
+  const tc = v('--chart-tick'), gc = v('--chart-grid');
+  const dow = [0,0,0,0,0,0,0]; // lun..dom
+  Object.entries(byDate).forEach(([d,n]) => { dow[(new Date(d+'T12:00:00').getDay()+6)%7] += n; });
   if (chartDow) chartDow.destroy();
   chartDow = new Chart(document.getElementById('chart-dow'), {
     type: 'bar',
-    data: { labels: ['dom','lun','mar','mié','jue','vie','sáb'], datasets: [{ data: dowCounts, backgroundColor: v('--bar'), borderRadius: 3, hoverBackgroundColor: v('--bar-hover') }] },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.raw} tareas` } } }, scales: { x: { ticks: { color: tc, font: { size: 10 } }, grid: { display: false }, border: { display: false } }, y: { ticks: { color: tc, font: { size: 10 } }, grid: { color: gc }, border: { display: false }, beginAtZero: true } } }
-  });
-
-  const mLabels = [], mData = [];
-  for (let i = 11; i >= 0; i--) {
-    const d = new Date(today); d.setMonth(d.getMonth()-i);
-    const ym = localISO(d).slice(0,7);
-    mLabels.push(months[d.getMonth()]);
-    mData.push(Object.entries(byDate).filter(([dt]) => dt.startsWith(ym)).reduce((a,[,v]) => a+v, 0));
-  }
-  if (chartMonthly) chartMonthly.destroy();
-  chartMonthly = new Chart(document.getElementById('chart-monthly'), {
-    type: 'line',
-    data: { labels: mLabels, datasets: [{ data: mData, borderColor: v('--line'), backgroundColor: v('--line-fill'), tension: 0.4, fill: true, pointBackgroundColor: v('--point'), pointRadius: 3, pointHoverRadius: 5 }] },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.raw} tareas` } } }, scales: { x: { ticks: { color: tc, font: { size: 10 } }, grid: { display: false }, border: { display: false } }, y: { ticks: { color: tc, font: { size: 10 } }, grid: { color: gc }, border: { display: false }, beginAtZero: true } } }
+    data: { labels: ['lun','mar','mié','jue','vie','sáb','dom'], datasets: [{ data: dow, backgroundColor: v('--bar'), borderRadius: 3, hoverBackgroundColor: v('--bar-hover') }] },
+    options: baseOpts(tc, gc, ' tareas')
   });
 }
 
-function buildProjects(byProject) {
-  const top = Object.entries(byProject).sort((a,b) => b[1]-a[1]).slice(0,5);
-  const el = document.getElementById('project-bars');
-  if (!top.length) { el.innerHTML = '<div class="state-msg" style="padding:1rem;font-size:12px">sin datos de proyecto</div>'; return; }
-  const max = top[0][1];
-  el.innerHTML = top.map(([name, count]) => {
+function buildTrend(byDate, from, to) {
+  const v = chartColors();
+  const tc = v('--chart-tick'), gc = v('--chart-grid');
+  let labels = [], data = [], title = 'tendencia mensual';
+  if (state.mode === 'mes') {
+    title = 'tendencia diaria';
+    const year = state.monthAnchor.getFullYear(), month = state.monthAnchor.getMonth();
+    const days = new Date(year, month+1, 0).getDate();
+    for (let d = 1; d <= days; d++) {
+      const ds = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      labels.push(String(d)); data.push(byDate[ds] || 0);
+    }
+  } else {
+    const c = new Date(from.getFullYear(), from.getMonth(), 1);
+    const end = new Date(to.getFullYear(), to.getMonth(), 1);
+    while (c <= end) {
+      const ym = `${c.getFullYear()}-${String(c.getMonth()+1).padStart(2,'0')}`;
+      labels.push(MONTHS[c.getMonth()]);
+      data.push(Object.entries(byDate).filter(([dt]) => dt.startsWith(ym)).reduce((a,[,vv]) => a+vv, 0));
+      c.setMonth(c.getMonth()+1);
+    }
+  }
+  document.getElementById('trend-title').textContent = title;
+  if (chartTrend) chartTrend.destroy();
+  chartTrend = new Chart(document.getElementById('chart-trend'), {
+    type: 'line',
+    data: { labels, datasets: [{ data, borderColor: v('--line'), backgroundColor: v('--line-fill'), tension: 0.4, fill: true, pointBackgroundColor: v('--point'), pointRadius: state.mode==='mes'?2:3, pointHoverRadius: 5 }] },
+    options: baseOpts(tc, gc, ' tareas')
+  });
+}
+
+function baseOpts(tc, gc, suffix) {
+  return { responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.raw}${suffix}` } } },
+    scales: { x: { ticks: { color: tc, font: { size: 10 } }, grid: { display: false }, border: { display: false } },
+              y: { ticks: { color: tc, font: { size: 10 } }, grid: { color: gc }, border: { display: false }, beginAtZero: true } } };
+}
+
+/* ---------- barras genéricas (tipo / cliente / proyecto) ---------- */
+function renderBars(elId, entries, emptyMsg) {
+  const el = document.getElementById(elId);
+  if (!entries.length) { el.innerHTML = `<div class="bars-empty">${emptyMsg}</div>`; return; }
+  const max = entries[0][1];
+  el.innerHTML = entries.map(([name, count]) => {
     const pct = Math.round((count/max)*100);
-    const esc = name.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-    return `<div class="proj-row"><div class="proj-head"><span class="proj-name" title="${esc}">${esc}</span><span class="proj-count">${count}</span></div><div class="proj-track"><div class="proj-fill" style="width:${pct}%"></div></div></div>`;
+    return `<div class="proj-row"><div class="proj-head"><span class="proj-name" title="${esc(name)}">${esc(name)}</span><span class="proj-count">${count}</span></div><div class="proj-track"><div class="proj-fill" style="width:${pct}%"></div></div></div>`;
   }).join('');
 }
 
-window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-  if (_byDate) buildCharts(_byDate, _today, _months);
+/* ---------- init ---------- */
+document.querySelectorAll('#seg button').forEach(b => {
+  b.addEventListener('click', () => {
+    state.mode = b.dataset.mode;
+    if (state.mode === 'mes') state.monthAnchor = firstOfMonth(new Date());
+    render();
+  });
 });
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if (allTasks.length) render(); });
 
 loadData();
 </script>
